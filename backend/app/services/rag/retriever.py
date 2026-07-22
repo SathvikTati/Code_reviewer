@@ -125,6 +125,30 @@ class Retriever:
                 "relative_path": relative_path
             }
         )
+    def retrieve_repository_tree(self):
+        """Returns one row per file with its declared classes and module-level
+        functions, ordered by path. Used to build the hierarchical context
+        (repository -> module -> file -> classes/functions)."""
+
+        query = """
+
+        MATCH (r:Repository)-[:CONTAINS]->(file:PythonFile)
+
+        OPTIONAL MATCH (file)-[:DECLARES]->(c:PythonClass)
+
+        OPTIONAL MATCH (file)-[:DECLARES]->(f:PythonFunction)
+
+        RETURN
+            file,
+            collect(DISTINCT c.name) AS classes,
+            collect(DISTINCT f.name) AS functions
+
+        ORDER BY file.relative_path
+
+        """
+
+        return self.graph.run_query(query)
+
     def retrieve_repository(self):
 
         query = """

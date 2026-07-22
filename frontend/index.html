@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Code Review Assistant</title>
+  <style>
+    :root {
+      --green: #2f8d46;
+      --green-dark: #216b34;
+      --green-tint: #e7f6ec;
+      --bg: #f7f8fa;
+      --card: #ffffff;
+      --border: #e2e5e9;
+      --text: #2f333e;
+      --muted: #6b7280;
+      --err: #d93025;
+      --code-bg: #f3f5f7;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* Top green nav bar (GeeksforGeeks style) */
+    .navbar {
+      background: var(--green);
+      color: #fff;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+    .navbar .logo {
+      width: 34px; height: 34px;
+      background: #fff;
+      color: var(--green);
+      font-weight: 800;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-size: 1.1rem;
+    }
+    .navbar .brand { font-size: 1.15rem; font-weight: 700; letter-spacing: .2px; }
+    .navbar .brand span { opacity: .85; font-weight: 500; }
+
+    .wrap { max-width: 880px; margin: 0 auto; padding: 34px 20px 80px; }
+
+    .intro { text-align: center; margin-bottom: 26px; }
+    .intro h1 { font-size: 1.7rem; margin: 0 0 6px; color: var(--text); }
+    .intro h1 b { color: var(--green); }
+    .intro p { color: var(--muted); margin: 0; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+    input[type="text"] {
+      flex: 1 1 380px;
+      background: #fff;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 13px 15px;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input[type="text"]:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px var(--green-tint);
+    }
+
+    button {
+      background: var(--green);
+      color: #fff;
+      border: 0;
+      padding: 13px 28px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    button:hover:not(:disabled) { background: var(--green-dark); }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+
+    .hint { color: var(--muted); font-size: .85rem; margin-top: 12px; }
+
+    /* Loading */
+    #loading { display: none; margin-top: 28px; text-align: center; }
+    #loading.show { display: block; }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 4px solid var(--green-tint);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      margin: 0 auto 14px;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { color: var(--text); font-weight: 600; }
+    .loading-sub { color: var(--muted); font-size: .9rem; margin-top: 4px; }
+    #elapsed { font-variant-numeric: tabular-nums; color: var(--green); font-weight: 600; }
+
+    /* Error */
+    #error {
+      display: none; margin-top: 24px;
+      background: #fdeeee;
+      border: 1px solid var(--err);
+      color: #a1160f;
+      padding: 16px; border-radius: 8px;
+      white-space: pre-wrap;
+    }
+    #error.show { display: block; }
+
+    /* Report (rendered markdown) */
+    #report {
+      display: none;
+      margin-top: 26px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-top: 4px solid var(--green);
+      border-radius: 12px;
+      padding: 26px 32px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    #report.show { display: block; }
+
+    #report h1, #report h2, #report h3 { line-height: 1.3; margin: 1.4em 0 .5em; }
+    #report h1 { font-size: 1.45rem; color: var(--green-dark); border-bottom: 2px solid var(--green-tint); padding-bottom: .3em; }
+    #report h2 { font-size: 1.2rem; color: var(--green); }
+    #report h3 { font-size: 1.05rem; color: var(--text); }
+    #report h1:first-child, #report h2:first-child, #report h3:first-child { margin-top: 0; }
+
+    #report p { margin: .7em 0; }
+    #report ul, #report ol { margin: .6em 0; padding-left: 1.5em; }
+    #report li { margin: .3em 0; }
+    #report li::marker { color: var(--green); }
+    #report strong { color: var(--text); font-weight: 700; }
+    #report a { color: var(--green); }
+
+    #report code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: .1em .4em;
+      font-size: .9em;
+      font-family: "SF Mono", Menlo, Consolas, monospace;
+      color: #b5216b;
+    }
+    #report pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+    }
+    #report pre code { background: none; border: 0; padding: 0; color: var(--text); }
+    #report hr { border: 0; border-top: 1px solid var(--border); margin: 1.5em 0; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">B</div>
+    <div class="brand">Code Review Assistant </div>
+  </nav>
+
+  <div class="wrap">
+    <div class="intro">
+      <h1>Audit any <b>Python</b> repository</h1>
+      <p>GraphRAG-powered code review over your repository structure and coding standards</p>
+    </div>
+
+    <div class="card">
+      <form id="form" class="row" autocomplete="off">
+        <input id="url" type="text" placeholder="https://github.com/owner/repo" required />
+        <button id="submit" type="submit">Analyze</button>
+      </form>
+      <div class="hint">Paste a public Python GitHub repository URL. The audit runs locally and can take a minute or two.</div>
+    </div>
+
+    <div id="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">Analyzing repository…</div>
+      <div class="loading-sub">Cloning, parsing, building the graph and reasoning. Elapsed: <span id="elapsed">0s</span></div>
+    </div>
+
+    <div id="error"></div>
+
+    <article id="report"></article>
+  </div>
+
+  <script>
+    const form = document.getElementById("form");
+    const urlInput = document.getElementById("url");
+    const submitBtn = document.getElementById("submit");
+    const loading = document.getElementById("loading");
+    const report = document.getElementById("report");
+    const errorEl = document.getElementById("error");
+    const elapsedEl = document.getElementById("elapsed");
+
+    let timer = null;
+
+    function startTimer() {
+      let seconds = 0;
+      elapsedEl.textContent = "0s";
+      timer = setInterval(() => {
+        seconds += 1;
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        elapsedEl.textContent = m > 0 ? `${m}m ${s}s` : `${s}s`;
+      }, 1000);
+    }
+    function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
+
+    // --- Minimal, dependency-free Markdown renderer ---
+    function escapeHtml(s) {
+      return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    function inlineMd(s) {
+      return s
+        .replace(/`([^`]+)`/g, "<code>$1</code>")
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    }
+    function renderMarkdown(md) {
+      const lines = escapeHtml(md).split("\n");
+      let html = "";
+      let inCode = false, listType = null;
+
+      const closeList = () => { if (listType) { html += `</${listType}>`; listType = null; } };
+
+      for (let raw of lines) {
+        const line = raw.replace(/\s+$/, "");
+
+        if (line.trim().startsWith("```")) {
+          if (inCode) { html += "</code></pre>"; inCode = false; }
+          else { closeList(); html += "<pre><code>"; inCode = true; }
+          continue;
+        }
+        if (inCode) { html += raw + "\n"; continue; }
+
+        if (!line.trim()) { closeList(); continue; }
+
+        let m;
+        if ((m = line.match(/^(#{1,6})\s+(.*)$/))) {
+          closeList();
+          const level = Math.min(m[1].length, 3);
+          html += `<h${level}>${inlineMd(m[2])}</h${level}>`;
+        } else if (/^\s*([-*])\s+/.test(line)) {
+          if (listType !== "ul") { closeList(); html += "<ul>"; listType = "ul"; }
+          html += `<li>${inlineMd(line.replace(/^\s*[-*]\s+/, ""))}</li>`;
+        } else if (/^\s*\d+\.\s+/.test(line)) {
+          if (listType !== "ol") { closeList(); html += "<ol>"; listType = "ol"; }
+          html += `<li>${inlineMd(line.replace(/^\s*\d+\.\s+/, ""))}</li>`;
+        } else if (/^(-{3,}|\*{3,}|_{3,})$/.test(line.trim())) {
+          closeList(); html += "<hr>";
+        } else {
+          closeList(); html += `<p>${inlineMd(line)}</p>`;
+        }
+      }
+      if (inCode) html += "</code></pre>";
+      closeList();
+      return html;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const github_url = urlInput.value.trim();
+      if (!github_url) return;
+
+      errorEl.classList.remove("show");
+      report.classList.remove("show");
+      loading.classList.add("show");
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Analyzing…";
+      startTimer();
+
+      try {
+        const res = await fetch("/review/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ github_url }),
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Server returned ${res.status}.\n${text}`);
+        }
+        const data = await res.json();
+        report.innerHTML = renderMarkdown(data.analysis || "_(no report returned)_");
+        report.classList.add("show");
+      } catch (err) {
+        errorEl.textContent = "Analysis failed:\n" + (err.message || err);
+        errorEl.classList.add("show");
+      } finally {
+        stopTimer();
+        loading.classList.remove("show");
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Analyze";
+      }
+    });
+  </script>
+</body>
+</html>

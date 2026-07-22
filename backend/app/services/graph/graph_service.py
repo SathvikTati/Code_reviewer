@@ -61,9 +61,13 @@ class GraphService:
                 session.run(query)
 
     def clear_database(self):
+        """Clears the code graph but preserves the knowledge base
+        (KnowledgeChunk nodes), which is ingested separately and reused
+        across every repository analysis."""
 
         query = """
         MATCH (n)
+        WHERE NOT n:KnowledgeChunk
         DETACH DELETE n
         """
 
@@ -112,6 +116,62 @@ class GraphService:
                 query,
                 from_id=from_id,
                 to_id=to_id
+            )
+
+    def create_vector_index(
+        self,
+        index_name: str,
+        label: str,
+        property_name: str,
+        dimensions: int,
+        similarity: str = "cosine"
+    ):
+        """Creates a native Neo4j vector index (requires Neo4j 5.11+)."""
+
+        query = f"""
+        CREATE VECTOR INDEX {index_name}
+        IF NOT EXISTS
+        FOR (n:{label})
+        ON (n.{property_name})
+        OPTIONS {{
+            indexConfig: {{
+                `vector.dimensions`: {dimensions},
+                `vector.similarity_function`: '{similarity}'
+            }}
+        }}
+        """
+
+        with self.driver.session() as session:
+            session.run(query)
+
+    def drop_vector_index(self, index_name: str):
+        """Drops a vector index if it exists, so it can be recreated with a
+        different dimensionality (e.g. after switching embedding provider)."""
+
+        with self.driver.session() as session:
+            session.run(f"DROP INDEX {index_name} IF EXISTS")
+
+    def set_node_vector(
+        self,
+        label: str,
+        node_id: str,
+        property_name: str,
+        vector: list[float]
+    ):
+        """Sets a vector property using the vector-aware setter so the value
+        is stored in a form the vector index can consume."""
+
+        query = f"""
+        MATCH (n:{label} {{id:$id}})
+        CALL db.create.setNodeVectorProperty(n, $property_name, $vector)
+        """
+
+        with self.driver.session() as session:
+            session.run(
+                query,
+                id=node_id,
+                property_name=property_name,
+                vector=vector
             )
 
     def run_query(

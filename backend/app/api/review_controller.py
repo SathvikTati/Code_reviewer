@@ -11,10 +11,11 @@ review_service = ReviewService()
 @router.post("/analyze")
 def analyze(request: RepositoryAnalysisRequest):
 
-    response = review_service.analyze_repository(
+    result = review_service.analyze_repository(
         request.github_url
     )
 
     return {
-        "analysis": response
+        "analysis": result["report"],
+        "usage": result["usage"],
     }

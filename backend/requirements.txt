@@ -5,3 +5,7 @@ python-dotenv
 GitPython
 neo4j
 ollama
+openai
+arize-phoenix
+arize-phoenix-otel
+openinference-semantic-conventions

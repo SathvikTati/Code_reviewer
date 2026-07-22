@@ -1,0 +1,98 @@
+{
+  "_comments": {
+    "about": "Code Review Assistant control panel. Everything the pipeline reads at runtime lives here or under resources/ (knowledge_base/, prompts/). Connection/secret settings stay in backend/.env.",
+    "categories": "Review dimensions every report is organized around; must match category_folders values.",
+    "category_folders": "Maps a knowledge_base/ subfolder name -> canonical category label.",
+    "chunking.section_heading": "Markdown heading prefix that starts a new knowledge-base chunk.",
+    "embedding.max_input_chars": "Max characters sent to the embedding model per call; guards the model's context window (nomic-embed-text = 2048 tokens).",
+    "retrieval": "repository_top_k = standards for a whole-repo query; module_top_k = standards per module; category_overfetch = over-fetch multiplier when filtering by category.",
+    "review": "Two-phase code review. max_file_chars = per-file source cap sent to the LLM; max_module_chars = total source cap per module; max_files_per_module = file count cap per module.",
+    "modules": "Logical module grouping for hierarchical retrieval. Each file is assigned to the FIRST module whose keywords match a whole word in its path. 'categories' biases KB retrieval. The final 'general' entry (empty keywords) is the catch-all and must stay last."
+  },
+
+  "categories": [
+    "Security",
+    "Code Quality",
+    "Performance",
+    "Maintainability",
+    "Testing",
+    "Architecture"
+  ],
+
+  "category_folders": {
+    "security": "Security",
+    "code_quality": "Code Quality",
+    "performance": "Performance",
+    "maintainability": "Maintainability",
+    "testing": "Testing",
+    "architecture": "Architecture"
+  },
+
+  "chunking": {
+    "section_heading": "## "
+  },
+
+  "embedding": {
+    "max_input_chars": 4000
+  },
+
+  "retrieval": {
+    "repository_top_k": 8,
+    "module_top_k": 4,
+    "category_overfetch": 5
+  },
+
+  "review": {
+    "max_file_chars": 3000,
+    "max_module_chars": 12000,
+    "max_files_per_module": 40
+  },
+
+  "modules": [
+    {
+      "name": "authentication",
+      "keywords": ["auth", "authentication", "authenticate", "authorization", "login", "logout", "signup", "signin", "jwt", "password", "oauth", "credential"],
+      "categories": ["Security"]
+    },
+    {
+      "name": "api",
+      "keywords": ["api", "route", "router", "endpoint", "controller", "view", "handler", "resource"],
+      "categories": ["Architecture", "Security", "Maintainability"]
+    },
+    {
+      "name": "services",
+      "keywords": ["service", "usecase", "use_case", "business", "domain", "manager"],
+      "categories": ["Architecture", "Maintainability", "Code Quality"]
+    },
+    {
+      "name": "database",
+      "keywords": ["db", "database", "model", "schema", "repository", "dao", "orm", "migration", "query", "entity"],
+      "categories": ["Security", "Performance", "Architecture"]
+    },
+    {
+      "name": "configuration",
+      "keywords": ["config", "settings", "env", "setup", "constants"],
+      "categories": ["Maintainability", "Security"]
+    },
+    {
+      "name": "utilities",
+      "keywords": ["util", "utils", "helper", "helpers", "common", "tool", "tools", "shared"],
+      "categories": ["Code Quality", "Maintainability"]
+    },
+    {
+      "name": "testing",
+      "keywords": ["test", "tests", "conftest", "spec", "fixture"],
+      "categories": ["Testing"]
+    },
+    {
+      "name": "machine_learning",
+      "keywords": ["train", "predict", "inference", "sklearn", "torch", "tensorflow", "dataset", "feature", "embedding", "ml"],
+      "categories": ["Performance", "Maintainability", "Architecture"]
+    },
+    {
+      "name": "general",
+      "keywords": [],
+      "categories": ["Code Quality", "Maintainability", "Architecture"]
+    }
+  ]
+}

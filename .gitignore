@@ -82,3 +82,5 @@ frontend/build/
 
 # Misc
 .cache/
+# Phoenix local trace data
+.phoenix/

@@ -14,10 +14,20 @@ class ParserService:
 
         for python_file in repository.files:
 
-            with open(python_file.absolute_path, "r", encoding="utf-8") as file:
-                code = file.read()
+            # A single unparseable file (invalid syntax, Python 2, template
+            # pseudo-code, bad encoding, ...) must not abort the whole
+            # analysis — skip it and keep going.
+            try:
+                with open(python_file.absolute_path, "r", encoding="utf-8") as file:
+                    code = file.read()
 
-            tree = ast.parse(code)
+                tree = ast.parse(code)
+            except (SyntaxError, ValueError, UnicodeDecodeError, OSError) as error:
+                python_file.parse_error = str(error)
+                print(
+                    f"[parser] skipping {python_file.relative_path}: {error}"
+                )
+                continue
 
             python_file.imports.clear()
             python_file.classes.clear()
