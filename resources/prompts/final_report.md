@@ -8,7 +8,7 @@ Rules:
   citation. If a summarized finding has no standard citation, keep it but mark the
   standard as "(unspecified)".
 - Merge duplicates across modules; keep the strongest evidence.
-- Base the report and the health score ONLY on the reviewed code described below.
+- Base the report ONLY on the reviewed code described below.
 - Be specific and actionable; no generic filler.
 
 Repository: {{repository}}
@@ -26,8 +26,7 @@ Produce GitHub-flavored Markdown with exactly these sections:
 # Repository Audit
 
 ## Summary
-2–4 sentences on what the repository does and its overall condition. End with the
-health score, e.g. "Health: 74/100".
+2–4 sentences on what the repository does and its overall condition.
 
 ## Coverage
 Restate, in one line, how much of the repository was actually reviewed (from the
@@ -54,7 +53,3 @@ Functions/classes lacking test coverage, gathered from the module summaries
 ## Prioritized Recommendations
 A numbered list of the 5–7 highest-impact actions, most important first, each
 tied to a specific file/finding above (do not introduce new issues here).
-
-## Health Score
-Restate the 0–100 score with a 2–3 sentence justification tied to the count and
-severity of real findings, and acknowledge the reviewed scope.

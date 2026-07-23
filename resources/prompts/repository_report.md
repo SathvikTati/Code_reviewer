@@ -55,7 +55,7 @@ OUTPUT FORMAT (GitHub-flavored Markdown, exactly these sections)
 
 ## Summary
 2–4 sentences: what this repository actually is (inferred only from the files
-shown) and its overall condition. End with the health score, e.g. "Health: 72/100".
+shown) and its overall condition.
 
 ## Architecture & Modules
 A short paragraph or a few bullets on how the code is organized (real packages/
@@ -80,8 +80,3 @@ Write each finding as:
 ## Prioritized Recommendations
 A numbered list of the highest-impact actions, most important first. Each item
 references the finding/file it addresses. Cap at the 5–7 that matter most.
-
-## Health Score
-Restate the 0–100 score and justify it in 2–3 sentences, tied to the count and
-severity of real findings (not vibes). A small, clean repo with few issues
-should score high; do not invent problems to lower it.
